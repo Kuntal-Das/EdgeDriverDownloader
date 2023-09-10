@@ -47,35 +47,19 @@ namespace EdgeDriverDownloader
                     return;
                 }
 
-                Directory.CreateDirectory(downloadPath);
-                //var downloadedZipFullPath = string.IsNullOrEmpty(downloadPath) ? ZipFileName
-                //    : Path.Combine(downloadPath, ZipFileName);
-                //var extractFolderFullPath = string.IsNullOrEmpty(downloadPath) ? ExtractFolderName
-                //    : Path.Combine(downloadPath, ExtractFolderName);
-
                 await DownloadFileAsync(downloadPath, string.Format(_edgeDiverUrl, currEdgeVersion, ZipFileName));
-
-                //ExtractAndCleanUp(downloadPath, downloadedZipFullPath, extractFolderFullPath, _edgeDriverExeName);
 
                 await SaveDownloadedEdgeDriverVersionAsync(currEdgeVersion, fileToSaveVerInfo);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (trial > 2) throw;
 
-                CleanUp(ExtractFolderName, downloadPath);
+                var egDvrFileInfo = new FileInfo(Path.Combine(downloadPath, _edgeDriverExeName));
+                if (egDvrFileInfo.Exists) { egDvrFileInfo.Delete(); }
+
                 await DownloadCompatibleDriverAsync(downloadPath, trial + 1);
             }
-        }
-
-        private void CleanUp(string extractFolder, string downloadPath)
-        {
-            try
-            {
-                if (Directory.Exists(extractFolder)) Directory.Delete(extractFolder, true);
-                if (File.Exists(downloadPath)) File.Delete((downloadPath));
-            }
-            catch (Exception) { }
         }
 
         private async Task SaveDownloadedEdgeDriverVersionAsync(Version edgeVersion, string fileToSaveVerInfo)
@@ -84,41 +68,19 @@ namespace EdgeDriverDownloader
                 await sw.WriteLineAsync(edgeVersion.ToString());
         }
 
-        private void ExtractAndCleanUp(string downloadPath, string downloadedZipFullPath, string extractFolderFullPath)
-        {
-            var dirInfo = new DirectoryInfo(downloadPath);
-            if (dirInfo.Exists)
-                dirInfo.Delete(true);
-
-
-            ZipFile.ExtractToDirectory(downloadPath, extractFolderFullPath);
-
-            File.Copy(Path.Combine(extractFolderFullPath, _edgeDriverExeName),
-                Path.Combine(downloadPath, _edgeDriverExeName));
-
-            File.Delete(downloadPath);
-            Directory.Delete(extractFolderFullPath, true);
-        }
-
         private async Task DownloadFileAsync(string downloadPath, string edgeDiverUrl)
         {
-            var response = await _httpClient.GetAsync(edgeDiverUrl);
+            var dirInfo = new DirectoryInfo(downloadPath);
+            if (!dirInfo.Exists) dirInfo.Create();
 
-            if (response.IsSuccessStatusCode)
+            using (var response = await _httpClient.GetStreamAsync(edgeDiverUrl))
+            using (ZipArchive zip = new ZipArchive(response, ZipArchiveMode.Read))
             {
-                var zipFilePath = string.IsNullOrEmpty(downloadPath) ? ZipFileName
-                    : Path.Combine(downloadPath, ZipFileName);
-
-                using (var fs = new FileStream(zipFilePath, FileMode.Create))
-                using (ZipArchive zip = new ZipArchive(fs))
-                {
-                    //await response.Content.CopyToAsync(fs);
-                    var edgeDriverEntry = zip.GetEntry(_edgeDriverExeName);
-
-                    edgeDriverEntry?.ExtractToFile(downloadPath, true);
-                }
+                var edgeDriverEntry = zip.GetEntry(_edgeDriverExeName);
+                edgeDriverEntry?.ExtractToFile(Path.Combine(downloadPath, _edgeDriverExeName), true);
             }
         }
+
 
         private async Task<bool> IsDownloadRequiredAsync(Version currEdgeVersion, string downloadPath, string filetoSaveVerInfo)
         {
