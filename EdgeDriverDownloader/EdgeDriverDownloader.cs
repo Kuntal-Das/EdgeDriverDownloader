@@ -1,7 +1,6 @@
 ﻿using Microsoft.Win32;
 using System.IO.Compression;
 using System.Reflection;
-using System.Security.Cryptography;
 
 namespace EdgeDriverDownloader
 {
@@ -15,13 +14,10 @@ namespace EdgeDriverDownloader
         private readonly string _buildType;
         private readonly HttpClient _httpClient;
         private string ZipFileName => $"edgedriver_{_buildType}.zip";
-        private string ExtractFolderName => $@"edgedriver_{_buildType}";
-
 
         public static EdgeDriverDownloader GetInstance()
         {
-            if (_instance is null)
-                _instance = new EdgeDriverDownloader();
+            _instance ??= new EdgeDriverDownloader();
             return _instance;
         }
 
@@ -51,7 +47,7 @@ namespace EdgeDriverDownloader
 
                 await SaveDownloadedEdgeDriverVersionAsync(currEdgeVersion, fileToSaveVerInfo);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 if (trial > 2) throw;
 
@@ -62,10 +58,10 @@ namespace EdgeDriverDownloader
             }
         }
 
-        private async Task SaveDownloadedEdgeDriverVersionAsync(Version edgeVersion, string fileToSaveVerInfo)
+        private static async Task SaveDownloadedEdgeDriverVersionAsync(Version edgeVersion, string fileToSaveVerInfo)
         {
-            using (StreamWriter sw = new StreamWriter(File.Open(fileToSaveVerInfo, FileMode.Create), System.Text.Encoding.Unicode))
-                await sw.WriteLineAsync(edgeVersion.ToString());
+            using StreamWriter sw = new(File.Open(fileToSaveVerInfo, FileMode.Create), System.Text.Encoding.Unicode);
+            await sw.WriteLineAsync(edgeVersion.ToString());
         }
 
         private async Task DownloadFileAsync(string downloadPath, string edgeDiverUrl)
@@ -73,16 +69,14 @@ namespace EdgeDriverDownloader
             var dirInfo = new DirectoryInfo(downloadPath);
             if (!dirInfo.Exists) dirInfo.Create();
 
-            using (var response = await _httpClient.GetStreamAsync(edgeDiverUrl))
-            using (ZipArchive zip = new ZipArchive(response, ZipArchiveMode.Read))
-            {
-                var edgeDriverEntry = zip.GetEntry(_edgeDriverExeName);
-                edgeDriverEntry?.ExtractToFile(Path.Combine(downloadPath, _edgeDriverExeName), true);
-            }
+            using var response = await _httpClient.GetStreamAsync(edgeDiverUrl);
+            using ZipArchive zip = new(response, ZipArchiveMode.Read);
+            var edgeDriverEntry = zip.GetEntry(_edgeDriverExeName);
+            edgeDriverEntry?.ExtractToFile(Path.Combine(downloadPath, _edgeDriverExeName), true);
         }
 
 
-        private async Task<bool> IsDownloadRequiredAsync(Version currEdgeVersion, string downloadPath, string filetoSaveVerInfo)
+        private static async Task<bool> IsDownloadRequiredAsync(Version currEdgeVersion, string downloadPath, string filetoSaveVerInfo)
         {
             if (!string.IsNullOrEmpty(downloadPath) && !Directory.Exists(downloadPath)) return true;
 
@@ -92,10 +86,8 @@ namespace EdgeDriverDownloader
             string? strPrevEdgeDriverVersion = null;
             if (File.Exists(filetoSaveVerInfo))
             {
-                using (StreamReader sr = new StreamReader(filetoSaveVerInfo))
-                {
-                    strPrevEdgeDriverVersion = await sr.ReadLineAsync();
-                }
+                using StreamReader sr = new(filetoSaveVerInfo);
+                strPrevEdgeDriverVersion = await sr.ReadLineAsync();
             }
             if (string.IsNullOrEmpty(strPrevEdgeDriverVersion) ||
                 !Version.TryParse(strPrevEdgeDriverVersion, out var prevEdgeDriverVersion))
@@ -105,12 +97,12 @@ namespace EdgeDriverDownloader
             return prevEdgeDriverVersion != currEdgeVersion;
         }
 
-        private Version GetEdgeVersionForWindows()
+        private static Version GetEdgeVersionForWindows()
         {
             //WINDOWS only
-            object version = Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Edge\BLBeacon", "version", null);
+            var version = Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Edge\BLBeacon", "version", null);
 
-            if (!string.IsNullOrEmpty(version.ToString()) && Version.TryParse(version.ToString(), out var value))
+            if (!string.IsNullOrEmpty(version?.ToString()) && Version.TryParse(version?.ToString(), out var value))
             {
                 return value;
             }
