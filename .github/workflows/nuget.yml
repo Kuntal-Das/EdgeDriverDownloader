@@ -24,26 +24,26 @@ jobs:
         with:
           dotnet-version: 6.0.x
       
-  Build:
-    needs: [Setup]
-    runs-on: windows-latest
-    steps:
+  # Build:
+  #   needs: [Setup]
+  #   runs-on: windows-latest
+  #   steps:
       - name: Restore dependencies
         run: dotnet restore ${{ env.PROJECT_PATH }}
       - name: Build
         run: dotnet build ${{ env.PROJECT_PATH }} --no-restore --configuration Release
       
-  Pack:
-    needs: [Build]
-    runs-on: windows-latest
-    steps:
+  # Pack:
+  #   needs: [Build]
+  #   runs-on: windows-latest
+  #   steps:
       - name: Pack
         run: dotnet pack ${{ env.PROJECT_PATH }} --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIR }}
    
-  Deploy:
-    needs: [Pack]
-    runs-on: windows-latest
-    steps:
+  # Deploy:
+  #   needs: [Pack]
+  #   runs-on: windows-latest
+    # steps:
       - name: Deploy
         run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg -k ${{ secrets.EDD_NUGET }} -s ${{ env.NUGET_SRC_URL }}
   
