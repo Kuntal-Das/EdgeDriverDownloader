@@ -10,7 +10,7 @@ on:
     tags: 
       - 'v*' 
 env:
-  PROJECT_PATH: 'EdgeDriverDownloader/EdgeDriverDownloader.csproj'
+  PROJECT_PATH: ${{ github.workspace }}\EdgeDriverDownloader.csproj
   PACKAGE_OUTPUT_DIR: ${{ github.workspace }}\output
   NUGET_SRC_URL: 'https://api.nuget.org/v3/index.json'
 
