@@ -1,0 +1,36 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    tags: [ "v*" ]
+    branches: [ "release" ]
+
+env:
+  PROJ_PATH: ''
+  PACKAGE_OUTPUT_DIR: ${{ github.workspace }}\output
+
+jobs:
+  pack:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get_version
+      uses: battila7/get-version-action@v2.2.1
+    - run: echo ${{ steps.get_version.outputs.version }}
+    - run: echo ${{ steps.get_version.outputs.version-without-v }}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Pack
+      run: dotnet pack --no-restore --no-build --configuration Release -p:PackageVersion=${{ steps.Get_version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIR }}
+    - name: Deploy
+      run: dotnet nuget push ${{ PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key ${{ secrets.EDD_NUGET }} --source "github"
+  
