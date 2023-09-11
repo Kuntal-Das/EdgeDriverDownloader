@@ -10,6 +10,7 @@ on:
     tags: 
       - 'v*' 
 env:
+  PROJECT_PATH: 'EdgeDriverDownloader/EdgeDriverDownloader.csproj'
   PACKAGE_OUTPUT_DIR: ${{ github.workspace }}\output
   NUGET_SRC_URL: 'https://api.nuget.org/v3/index.json'
 
@@ -28,16 +29,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build ${{ env.PROJECT_PATH }} --no-restore --configuration Release
       
   Pack:
     needs: [Build]
     runs-on: windows-latest
     steps:
       - name: Pack
-        run: dotnet pack --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIR }}
+        run: dotnet pack ${{ env.PROJECT_PATH }} --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIR }}
    
   Deploy:
     needs: [Pack]
