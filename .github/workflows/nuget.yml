@@ -29,5 +29,5 @@ jobs:
     - name: Pack
       run: dotnet pack --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIR }}
     - name: Deploy
-      run: dotnet nuget push --source ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key ${{ secrets.EDD_NUGET }}
+      run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key ${{ secrets.EDD_NUGET }}
   
