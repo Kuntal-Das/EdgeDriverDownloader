@@ -32,5 +32,5 @@ jobs:
     - name: Pack
       run: dotnet pack --no-restore --no-build --configuration Release -p:PackageVersion=${{ steps.Get_version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIR }}
     - name: Deploy
-      run: dotnet nuget push ${{ PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key ${{ secrets.EDD_NUGET }} --source "github"
+      run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key ${{ secrets.EDD_NUGET }} --source "github"
   
