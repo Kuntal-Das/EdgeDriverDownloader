@@ -5,11 +5,12 @@ name: .NET
 
 on:
   push:
-    tags: [ "v*" ]
-    branches: [ "main" ]
+    tags: 
+    - 'v*' 
+    branches: 
+    - "main"
 
 env:
-  PROJ_PATH: ''
   PACKAGE_OUTPUT_DIR: ${{ github.workspace }}\output
 
 jobs:
